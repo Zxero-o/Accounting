@@ -16,7 +16,7 @@ import java.util.*;
 public class IncomeStatement extends javax.swing.JFrame {
     
     private static final java.util.logging.Logger logger = java.util.logging.Logger.getLogger(IncomeStatement.class.getName());
-
+    public static double latestNetIncome = 0;
     /**
      * Creates new form IncomeStatement
      */
@@ -27,35 +27,54 @@ public class IncomeStatement extends javax.swing.JFrame {
     
     public  void loadIncomeStatement() {
         txtCompany_Name.setText(IncomeStatementDB.getCompanyName());
-    Map<String, List<AccountBalance>> data = IncomeStatementDB.getIncomeStatementData();
+        Map<String, List<AccountBalance>> data = IncomeStatementDB.getIncomeStatementData();
 
-    loadTable(tblIncome, data.get("Income"));
-    loadTable(tblExpense, data.get("Expense"));
+        loadTable(tblIncome, data.get("Income"));
+        loadTable(tblExpense, data.get("Expense"));
 
-    double totalIncome = sumBalances(data.get("Income"));
-    double totalExpense = sumBalances(data.get("Expense"));
-    double netIncome = totalIncome - totalExpense;
+        double totalIncome = sumBalances(data.get("Income"));
+        double totalCOGS = sumBalances(data.get("COGS"));
+        double totalExpense = sumBalances(data.get("Expense"));
 
-    txtTotalIncome.setText(String.format("%.2f", totalIncome));
-    txtTotalExpense.setText(String.format("%.2f", totalExpense));
+        DefaultTableModel model = (DefaultTableModel) tblIncome.getModel();
+        
+        if (totalCOGS > 0) {
+            model.addRow(new Object[]{"(less) Cost of Goods Sold", String.format("%.2f", totalCOGS)});
+            double grossProfit = totalIncome - totalCOGS;
+            txtTotalIncome.setText(String.format("%.2f", grossProfit));
+        }else
+            txtTotalIncome.setText(String.format("%.2f", totalIncome));
 
-    if (netIncome >= 0)
-        txtNetIncome.setText("Net Income: " + String.format("%.2f", netIncome));
-    else
-        txtNetIncome.setText("Net Loss: " + String.format("%.2f", Math.abs(netIncome)));
-}
+        double netIncome;
+        if (totalCOGS > 0)
+            netIncome = (totalIncome - totalCOGS) - totalExpense;
+        else
+            netIncome = totalIncome - totalExpense;
 
-public  void loadTable(javax.swing.JTable table, List<AccountBalance> list) {
-    DefaultTableModel model = (DefaultTableModel) table.getModel();
-    model.setRowCount(0);
-    for (AccountBalance acc : list) {
-        model.addRow(new Object[]{acc.accountTitle, acc.balance});
+        txtTotalExpense.setText(String.format("%.2f", totalExpense));
+
+        if (netIncome > 0)
+            txtNetIncome.setText("Net Income: " + String.format("%.2f", netIncome));
+        else if (netIncome < 0)
+            txtNetIncome.setText("(less) Net Loss: " + String.format("%.2f", Math.abs(netIncome)));
+        else
+            txtNetIncome.setText("");
+
+
+        IncomeStatementDB.netIncome = netIncome;
     }
-}
 
-public double sumBalances(List<AccountBalance> list) {
-    return list.stream().mapToDouble(a -> a.balance).sum();
-}
+    public  void loadTable(javax.swing.JTable table, List<AccountBalance> list) {
+        DefaultTableModel model = (DefaultTableModel) table.getModel();
+        model.setRowCount(0);
+        for (AccountBalance acc : list) {
+            model.addRow(new Object[]{acc.accountTitle, acc.balance});
+        }
+    }
+
+    public double sumBalances(List<AccountBalance> list) {
+        return list.stream().mapToDouble(a -> a.balance).sum();
+    }
 
     /**
      * This method is called from within the constructor to initialize the form.
@@ -86,6 +105,7 @@ public double sumBalances(List<AccountBalance> list) {
         setDefaultCloseOperation(javax.swing.WindowConstants.EXIT_ON_CLOSE);
 
         jPanel1.setBackground(new java.awt.Color(210, 226, 235));
+        jPanel1.setLayout(new org.netbeans.lib.awtextra.AbsoluteLayout());
 
         jPanel3.setBackground(new java.awt.Color(191, 218, 232));
 
@@ -122,6 +142,8 @@ public double sumBalances(List<AccountBalance> list) {
                 .addGap(0, 6, Short.MAX_VALUE))
         );
 
+        jPanel1.add(jPanel3, new org.netbeans.lib.awtextra.AbsoluteConstraints(0, 0, 1541, -1));
+
         tblIncome.setFont(new java.awt.Font("Rockwell", 0, 14)); // NOI18N
         tblIncome.setModel(new javax.swing.table.DefaultTableModel(
             new Object [][] {
@@ -140,6 +162,8 @@ public double sumBalances(List<AccountBalance> list) {
             }
         });
         jScrollPane1.setViewportView(tblIncome);
+
+        jPanel1.add(jScrollPane1, new org.netbeans.lib.awtextra.AbsoluteConstraints(550, 220, -1, 195));
 
         tblExpense.setFont(new java.awt.Font("Rockwell", 0, 14)); // NOI18N
         tblExpense.setModel(new javax.swing.table.DefaultTableModel(
@@ -163,23 +187,36 @@ public double sumBalances(List<AccountBalance> list) {
         });
         jScrollPane2.setViewportView(tblExpense);
 
+        jPanel1.add(jScrollPane2, new org.netbeans.lib.awtextra.AbsoluteConstraints(550, 500, -1, 195));
+
         txtTotalIncome.setFont(new java.awt.Font("Rockwell", 0, 14)); // NOI18N
+        txtTotalIncome.addActionListener(new java.awt.event.ActionListener() {
+            public void actionPerformed(java.awt.event.ActionEvent evt) {
+                txtTotalIncomeActionPerformed(evt);
+            }
+        });
+        jPanel1.add(txtTotalIncome, new org.netbeans.lib.awtextra.AbsoluteConstraints(890, 420, 110, 35));
 
         txtTotalExpense.setFont(new java.awt.Font("Rockwell", 0, 14)); // NOI18N
+        jPanel1.add(txtTotalExpense, new org.netbeans.lib.awtextra.AbsoluteConstraints(890, 700, 110, 35));
 
         jLabel4.setFont(new java.awt.Font("Rockwell", 0, 24)); // NOI18N
         jLabel4.setForeground(new java.awt.Color(122, 133, 193));
         jLabel4.setText("Expense");
+        jPanel1.add(jLabel4, new org.netbeans.lib.awtextra.AbsoluteConstraints(550, 470, 452, -1));
 
         jLabel5.setFont(new java.awt.Font("Rockwell", 0, 24)); // NOI18N
         jLabel5.setForeground(new java.awt.Color(122, 133, 193));
         jLabel5.setText("Income");
+        jPanel1.add(jLabel5, new org.netbeans.lib.awtextra.AbsoluteConstraints(550, 190, 452, -1));
 
         jLabel6.setFont(new java.awt.Font("Rockwell", 0, 18)); // NOI18N
         jLabel6.setText("Total:");
+        jPanel1.add(jLabel6, new org.netbeans.lib.awtextra.AbsoluteConstraints(840, 710, -1, -1));
 
         jLabel7.setFont(new java.awt.Font("Rockwell", 0, 18)); // NOI18N
-        jLabel7.setText("Total:");
+        jLabel7.setText("Gross Profit:");
+        jPanel1.add(jLabel7, new org.netbeans.lib.awtextra.AbsoluteConstraints(780, 430, -1, -1));
 
         btnDone.setFont(new java.awt.Font("Rockwell", 0, 14)); // NOI18N
         btnDone.setText("Done");
@@ -188,61 +225,10 @@ public double sumBalances(List<AccountBalance> list) {
                 btnDoneActionPerformed(evt);
             }
         });
+        jPanel1.add(btnDone, new org.netbeans.lib.awtextra.AbsoluteConstraints(1010, 760, -1, -1));
 
         txtNetIncome.setFont(new java.awt.Font("Rockwell", 0, 14)); // NOI18N
-
-        javax.swing.GroupLayout jPanel1Layout = new javax.swing.GroupLayout(jPanel1);
-        jPanel1.setLayout(jPanel1Layout);
-        jPanel1Layout.setHorizontalGroup(
-            jPanel1Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-            .addComponent(jPanel3, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
-            .addGroup(jPanel1Layout.createSequentialGroup()
-                .addGap(258, 258, 258)
-                .addGroup(jPanel1Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.TRAILING)
-                    .addGroup(jPanel1Layout.createSequentialGroup()
-                        .addGroup(jPanel1Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.TRAILING)
-                            .addComponent(jLabel5, javax.swing.GroupLayout.PREFERRED_SIZE, 452, javax.swing.GroupLayout.PREFERRED_SIZE)
-                            .addComponent(jScrollPane1, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
-                            .addGroup(jPanel1Layout.createSequentialGroup()
-                                .addComponent(jLabel7)
-                                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
-                                .addComponent(txtTotalIncome, javax.swing.GroupLayout.PREFERRED_SIZE, 110, javax.swing.GroupLayout.PREFERRED_SIZE)))
-                        .addGap(126, 126, 126)
-                        .addGroup(jPanel1Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-                            .addComponent(jScrollPane2, javax.swing.GroupLayout.Alignment.TRAILING, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
-                            .addComponent(jLabel4, javax.swing.GroupLayout.Alignment.TRAILING, javax.swing.GroupLayout.PREFERRED_SIZE, 452, javax.swing.GroupLayout.PREFERRED_SIZE)
-                            .addGroup(javax.swing.GroupLayout.Alignment.TRAILING, jPanel1Layout.createSequentialGroup()
-                                .addComponent(jLabel6)
-                                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
-                                .addComponent(txtTotalExpense, javax.swing.GroupLayout.PREFERRED_SIZE, 110, javax.swing.GroupLayout.PREFERRED_SIZE))
-                            .addComponent(txtNetIncome, javax.swing.GroupLayout.Alignment.TRAILING, javax.swing.GroupLayout.PREFERRED_SIZE, 150, javax.swing.GroupLayout.PREFERRED_SIZE)))
-                    .addComponent(btnDone))
-                .addContainerGap(253, Short.MAX_VALUE))
-        );
-        jPanel1Layout.setVerticalGroup(
-            jPanel1Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-            .addGroup(jPanel1Layout.createSequentialGroup()
-                .addComponent(jPanel3, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
-                .addGap(66, 66, 66)
-                .addGroup(jPanel1Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.TRAILING)
-                    .addComponent(jLabel4)
-                    .addComponent(jLabel5))
-                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
-                .addGroup(jPanel1Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.TRAILING)
-                    .addComponent(jScrollPane1, javax.swing.GroupLayout.PREFERRED_SIZE, 195, javax.swing.GroupLayout.PREFERRED_SIZE)
-                    .addComponent(jScrollPane2, javax.swing.GroupLayout.PREFERRED_SIZE, 195, javax.swing.GroupLayout.PREFERRED_SIZE))
-                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
-                .addGroup(jPanel1Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.BASELINE)
-                    .addComponent(txtTotalExpense, javax.swing.GroupLayout.PREFERRED_SIZE, 35, javax.swing.GroupLayout.PREFERRED_SIZE)
-                    .addComponent(txtTotalIncome, javax.swing.GroupLayout.PREFERRED_SIZE, 35, javax.swing.GroupLayout.PREFERRED_SIZE)
-                    .addComponent(jLabel6, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
-                    .addComponent(jLabel7, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE))
-                .addGap(131, 131, 131)
-                .addComponent(txtNetIncome, javax.swing.GroupLayout.PREFERRED_SIZE, 39, javax.swing.GroupLayout.PREFERRED_SIZE)
-                .addGap(18, 18, 18)
-                .addComponent(btnDone)
-                .addGap(0, 94, Short.MAX_VALUE))
-        );
+        jPanel1.add(txtNetIncome, new org.netbeans.lib.awtextra.AbsoluteConstraints(830, 750, 170, 39));
 
         javax.swing.GroupLayout layout = new javax.swing.GroupLayout(getContentPane());
         getContentPane().setLayout(layout);
@@ -264,6 +250,10 @@ public double sumBalances(List<AccountBalance> list) {
         Menu menu = new Menu();
         menu.setVisible(true);
     }//GEN-LAST:event_btnDoneActionPerformed
+
+    private void txtTotalIncomeActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_txtTotalIncomeActionPerformed
+        // TODO add your handling code here:
+    }//GEN-LAST:event_txtTotalIncomeActionPerformed
 
     /**
      * @param args the command line arguments
@@ -293,20 +283,17 @@ public double sumBalances(List<AccountBalance> list) {
     // Variables declaration - do not modify//GEN-BEGIN:variables
     private javax.swing.JButton btnDone;
     private javax.swing.JLabel jLabel1;
-    private javax.swing.JLabel jLabel2;
     private javax.swing.JLabel jLabel4;
     private javax.swing.JLabel jLabel5;
     private javax.swing.JLabel jLabel6;
     private javax.swing.JLabel jLabel7;
     private javax.swing.JPanel jPanel1;
-    private javax.swing.JPanel jPanel2;
     private javax.swing.JPanel jPanel3;
     private javax.swing.JScrollPane jScrollPane1;
     private javax.swing.JScrollPane jScrollPane2;
     private javax.swing.JTable tblExpense;
     private javax.swing.JTable tblIncome;
     private javax.swing.JTextField txtCompany_Name;
-    private javax.swing.JTextField txtCompany_Name1;
     private javax.swing.JTextField txtNetIncome;
     private javax.swing.JTextField txtTotalExpense;
     private javax.swing.JTextField txtTotalIncome;

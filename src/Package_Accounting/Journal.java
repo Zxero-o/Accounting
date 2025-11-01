@@ -19,7 +19,7 @@ public class Journal extends javax.swing.JFrame {
     
     private static final java.util.logging.Logger logger = java.util.logging.Logger.getLogger(Journal.class.getName());
     private int currentJournalId = 0;
-     private DefaultTableModel model;
+    private DefaultTableModel model;
 
     /**
      * Creates new form Journal
@@ -53,7 +53,7 @@ public class Journal extends javax.swing.JFrame {
         
         this.currentJournalId = 0;
         btnConfirm.setEnabled(false);
-        String companyName = user.loadCompanyName(); // Try to read saved name
+        String companyName = user.loadCompanyName(); 
 
     if (companyName == null || companyName.isEmpty()) {
         companyName = JOptionPane.showInputDialog(null, "Enter Company Name:");
@@ -72,7 +72,7 @@ public class Journal extends javax.swing.JFrame {
     }
     
      private void loadJournalData() {
-        model.setRowCount(0); // clear table
+        model.setRowCount(0);
         List<Object[]> entries = JournalDA.getAllJournalEntries();
         for (Object[] row : entries) {
             model.addRow(row);

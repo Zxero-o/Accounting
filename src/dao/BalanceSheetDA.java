@@ -52,14 +52,14 @@ public class BalanceSheetDA {
                 double credit = rs.getDouble("total_credit");
                 double balance = Math.abs(debit - credit);
 
-                // Group prepaid expenses together
-                if (title.toLowerCase().contains("rent") || title.toLowerCase().contains("salary") || title.toLowerCase().contains("utility")) {
-                    prepaidTotal += balance;
+                
+                if (title.toLowerCase().contains("rent expense") || title.toLowerCase().contains("salary expense") || title.toLowerCase().contains("utility expense") ||  title.toLowerCase().contains("transportation expense ") ||  title.toLowerCase().contains("freight in") ||  title.toLowerCase().contains("freight out") ) {
+                    prepaidTotal += balance;  
                     continue;
                 }
 
-                // Group equipment-related assets
-                if (title.toLowerCase().contains("equipment") || title.toLowerCase().contains("furniture") || title.toLowerCase().contains("machiner")) {
+                
+                if (title.toLowerCase().contains("equipment") || title.toLowerCase().contains("furniture") || title.toLowerCase().contains("machineries")) {
                     equipmentTotal += balance;
                     continue;
                 }
@@ -73,30 +73,36 @@ public class BalanceSheetDA {
                 }
             }
 
-            // Add grouped totals
+           
             if (prepaidTotal > 0)
                 map.get("CurrentAsset").add(new AccountBalance("Prepaid Expense", prepaidTotal));
             if (equipmentTotal > 0)
                 map.get("NoncurrentAsset").add(new AccountBalance("Equipments", equipmentTotal));
-
+            if (dao.IncomeStatementDB.netIncome != 0) {
+                double netIncome = dao.IncomeStatementDB.netIncome;
+                if (netIncome > 0)
+                    map.get("Equity").add(new AccountBalance("Net Income", netIncome));
+                else
+                    map.get("Equity").add(new AccountBalance("(less) Net Loss", Math.abs(netIncome) * -1));
+            }
         } catch (SQLException e) {
             JOptionPane.showMessageDialog(null, "Error loading balance sheet data: " + e.getMessage());
         }
-
+        
         return map;
     }
     
     public static String getCompanyName() {
-    String companyName = "";
-    try (Connection con = ConnectionDB.getConnection();
-         PreparedStatement ps = con.prepareStatement("SELECT company_name FROM journal LIMIT 1");
-         ResultSet rs = ps.executeQuery()) {
-        if (rs.next()) {
-            companyName = rs.getString("company_name");
+        String companyName = "";
+        try (Connection con = ConnectionDB.getConnection();
+             PreparedStatement ps = con.prepareStatement("SELECT company_name FROM journal LIMIT 1");
+             ResultSet rs = ps.executeQuery()) {
+            if (rs.next()) {
+                companyName = rs.getString("company_name");
+            }
+        } catch (SQLException e) {
+            JOptionPane.showMessageDialog(null, "Error fetching company name: " + e.getMessage());
         }
-    } catch (SQLException e) {
-        JOptionPane.showMessageDialog(null, "Error fetching company name: " + e.getMessage());
-    }
-    return companyName;
+        return companyName;
     }
 }

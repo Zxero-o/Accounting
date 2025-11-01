@@ -26,24 +26,24 @@ public class ViewJournal extends javax.swing.JFrame {
         setTitle("View Journal");
         setSize(700, 400);
         setLocationRelativeTo(null);
-        setDefaultCloseOperation(JFrame.DISPOSE_ON_CLOSE); // only close this window
+        setDefaultCloseOperation(JFrame.DISPOSE_ON_CLOSE); 
 
-        // Column headers
+        
         String[] columnNames = {"Journal ID", "Account Title", "Debit", "Credit"};
         DefaultTableModel model = new DefaultTableModel(columnNames, 0);
 
         JTable table = new JTable(model);
         table.setRowHeight(25);
 
-        // Load data from DAO
+        
         java.util.List<Object[]> entries = JournalDA.getAllJournalEntries();
         for (Object[] row : entries) {
             model.addRow(row);
         }
 
-        // Add scrollable table
+        
         JScrollPane scrollPane = new JScrollPane(table);
-        getContentPane().setLayout(new BorderLayout()); // important!
+        getContentPane().setLayout(new BorderLayout()); 
         getContentPane().add(scrollPane, BorderLayout.CENTER);
     }
 

@@ -34,7 +34,7 @@ public class LedgerView extends javax.swing.JFrame {
         txtCompany_Name.setText(LedgerDA.getCompanyName());
      List<LedgerDA.LedgerEntry> ledgerList = LedgerDA.getLedgerData();
 
-    // Prepare component arrays for easier looping
+    
     JTextField[] titleFields = {
         Account_Titles, Account_Titles1, Account_Titles2, Account_Titles3,
         Account_Titles4, Account_Titles5, Account_Titles6, Account_Titles7,
@@ -57,19 +57,19 @@ public class LedgerView extends javax.swing.JFrame {
         tblContents17, tblContents18
     };
 
-    // Fill only the number of accounts that exist
+   
     for (int i = 0; i < ledgerList.size() && i < tables.length; i++) {
         LedgerDA.LedgerEntry entry = ledgerList.get(i);
         titleFields[i].setText(entry.accountTitle);
 
-        // Create table model with Debit and Credit columns
+        
         DefaultTableModel model = new DefaultTableModel(new Object[]{"Debit", "Credit"}, 0);
         for (double[] trans : entry.transactions) {
             model.addRow(new Object[]{trans[0] == 0 ? "" : trans[0], trans[1] == 0 ? "" :trans[1]});
         }
         tables[i].setModel(model);
 
-        // Compute total and display which side is higher
+        
         double diff = entry.totalDebit - entry.totalCredit;
         if (diff > 0) {
             totalFields[i].setText("Debit: " + diff);

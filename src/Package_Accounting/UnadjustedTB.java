@@ -37,7 +37,7 @@ public class UnadjustedTB extends javax.swing.JFrame {
         for (UnadjustedTBDA.AccountTotal acc : tbList) {
             double debit = 0, credit = 0;
 
-            // Compare totals and place net in the correct column
+            
             if (acc.debitTotal > acc.creditTotal) {
                 debit = acc.debitTotal - acc.creditTotal;
                 totalDebit += debit;

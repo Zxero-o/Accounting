@@ -52,17 +52,17 @@ public class UnadjustedTBDA {
         return list;
     }
     
-     public static String getCompanyName(){
-    String companyName = "";
-    try (Connection con = ConnectionDB.getConnection();
-         PreparedStatement ps = con.prepareStatement("SELECT company_name FROM journal LIMIT 1");
-         ResultSet rs = ps.executeQuery()) {
-        if (rs.next()) {
-            companyName = rs.getString("company_name");
+    public static String getCompanyName(){
+        String companyName = "";
+        try (Connection con = ConnectionDB.getConnection();
+             PreparedStatement ps = con.prepareStatement("SELECT company_name FROM journal LIMIT 1");
+             ResultSet rs = ps.executeQuery()) {
+            if (rs.next()) {
+                companyName = rs.getString("company_name");
+            }
+        } catch (SQLException e) {
+            JOptionPane.showMessageDialog(null, "Error fetching company name: " + e.getMessage());
         }
-    } catch (SQLException e) {
-        JOptionPane.showMessageDialog(null, "Error fetching company name: " + e.getMessage());
+        return companyName;
+        }
     }
-    return companyName;
-    }
-}
